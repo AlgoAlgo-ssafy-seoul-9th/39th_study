@@ -138,7 +138,130 @@ else:
 ### [민웅](./고대%20문명%20유적%20탐사/민웅.py)
 
 ```py
+import sys
+from collections import deque
+dxy = [(0, 1), (0, -1), (1, 0), (-1, 0)]
+input = sys.stdin.readline
 
+
+def rotate(lst, x, y):
+    tmp = [[lst[i][j] for j in range(5)] for i in range(5)]
+
+    for i in range(3):
+        for j in range(3):
+            tmp[x-1+i][y-1+j] = lst[x-1+2-j][y-1+i]
+
+    return tmp
+
+
+def boom_check(lst):
+    visited = [[0] * 5 for _ in range(5)]
+    cnt = 0
+    for i in range(5):
+        for j in range(5):
+            if not visited[i][j] and lst[i][j] != -1:
+                q = deque()
+                num = lst[i][j]
+                q.append([i, j])
+                visited[i][j] = 1
+                group = []
+
+                tmp_cnt = 0
+                while q:
+                    x, y = q.popleft()
+                    tmp_cnt += 1
+                    group.append([x, y])
+
+                    for d in dxy:
+                        nx = x + d[0]
+                        ny = y + d[1]
+
+                        if 0 <= nx <= 4 and 0 <= ny <= 4:
+                            if lst[nx][ny] == num and not visited[nx][ny]:
+                                q.append([nx, ny])
+                                visited[nx][ny] = 1
+                if tmp_cnt > 2:
+                    cnt += tmp_cnt
+                    for g in group:
+                        lst[g[0]][g[1]] = -1
+    return cnt, lst
+
+
+def phase1(lst):
+    ans = 0
+    # 행, 열, 회전 수(90, 180, 270)
+    ans_rct = [0, 0, 0]
+    ans_lst = []
+    for r in range(1, 4):
+        for c in range(1, 4):
+            tmp = [[lst[i][j] for j in range(5)] for i in range(5)]
+            for t in range(1, 4):
+                tmp = rotate(tmp, r, c)
+                b_tmp = [[tmp[i][j] for j in range(5)] for i in range(5)]
+                cnt, l = boom_check(b_tmp)
+
+                if cnt > ans:
+                    ans = cnt
+                    ans_rct = [r, c, 90 * t]
+                    ans_lst = l
+                elif cnt == ans:
+                    if 90*t < ans_rct[2]:
+                        ans_rct = [r, c, 90 * t]
+                        ans_lst = l
+                    elif 90*t == ans_rct[2]:
+                        if c < ans_rct[1]:
+                            ans_rct = [r, c, 90 * t]
+                            ans_lst = l
+                        elif c == ans_rct[1]:
+                            if r < ans_rct[0]:
+                                ans_rct = [r, c, 90 * t]
+                                ans_lst = l
+
+    return ans, ans_lst
+
+
+def phase2(lst, r):
+    if not r:
+        return lst
+
+    for j in range(5):
+        for i in range(4, -1, -1):
+            if lst[i][j] == -1:
+                if r:
+                    lst[i][j] = r.popleft()
+                else:
+                    break
+        if not r:
+            break
+
+    return lst
+
+
+K, M = map(int, input().split())
+
+relic = [list(map(int, input().split())) for _ in range(5)]
+remain = deque(map(int, input().split()))
+
+ans_lst = []
+ans = 0
+
+while K:
+    c, relic = phase1(relic)
+    if not c:
+        break
+    ans += c
+
+    while True:
+        relic = phase2(relic, remain)
+        c, relic = boom_check(relic)
+        if not c:
+            break
+        ans += c
+
+    K -= 1
+    ans_lst.append(ans)
+    ans = 0
+print(*ans_lst)
 ```
 
 ### [상미](./고대%20문명%20유적%20탐사/상미.py)
@@ -242,7 +365,60 @@ print(ans)
 ### [성구](./레이저%20통신/성구.py)
 
 ```py
+# 6087 레이저 통신
+import sys
+from collections import deque
+input = sys.stdin.readline
 
+W, H = map(int, input().split())
+geo = tuple(input().strip() for _ in range(H))
+
+point = []
+for i in range(H):
+    for j in range(W):
+        if geo[i][j] == 'C':
+            point.append((i,j))
+
+def bfs(start, end):
+    que = deque()
+    visited = [[[10000,10000,10000,10000] for _ in range(W)]  for _ in range(H)]
+    direction = [(0,1), (0,-1), (1,0), (-1,0)]
+
+    for d in range(4):
+        visited[start[0]][start[1]][d] = 0
+        di, dj = direction[d]
+        ni,nj = di+start[0], dj+start[1]
+        if 0 <= ni < H and 0 <= nj < W and geo[ni][nj] != "*":
+            visited[ni][nj][d] = 0
+            que.append((ni,nj))
+
+    while que:
+        i, j= que.popleft()
+        if (i,j) == end:
+            continue
+        
+        for k in range(4):      # 방향순회
+            di,dj = direction[k]
+            ni, nj = di+i, dj+j
+
+            if 0 > ni or 0 > nj or W <= nj or H <= ni or geo[ni][nj]=="*":
+                continue
+        
+            min_value = visited[ni][nj][k]
+            for d in range(4):      # visited[i][j] 순회
+                if k != d:
+                    min_value = min(min_value, visited[i][j][d]+1)
+                else:
+                    min_value = min(min_value, visited[i][j][d])
+            
+            if min_value < visited[ni][nj][k]:
+                visited[ni][nj][k] = min_value
+                que.append((ni,nj))
+
+    # [print(visited[a]) for a in range(H)]
+    return min(visited[end[0]][end[1]])
+
+print(bfs(*point))
 ```
 
 ### [영준](./레이저%20통신/영준.py)
