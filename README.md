@@ -68,7 +68,7 @@ elif d == 1:
 elif d == 2:
     print(2)
 else:
-    for i in range(2, 2**15):
+    for i in range(2, 2**16):
         if (i-1)**2 < d <= ((i-1)**2 + i**2)//2:
             print(2*i-2)
             break
